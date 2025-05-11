@@ -1,0 +1,7 @@
+services:
+  development:
+    build: .
+    command: [sh, -c, "while sleep 1000; do :; done"]
+    volumes:
+      - ..:/home/vscode/workspace
+      - ~/.ssh/id_rsa.pub:/home/vscode/.ssh/id_rsa.pub

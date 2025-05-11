@@ -1,0 +1,11 @@
+{
+  "name": "Polygon Overlay / Hadoop MapReduce / Grid",
+  "dockerComposeFile": [
+    "docker-compose.yml",
+    "hadoop/docker-compose.yml"
+  ],
+  "service": "development",
+  "workspaceFolder": "/home/vscode/workspace",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": ".devcontainer/post-create.sh"
+}
