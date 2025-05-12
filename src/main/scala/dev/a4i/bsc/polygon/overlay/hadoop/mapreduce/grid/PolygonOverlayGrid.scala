@@ -95,8 +95,8 @@ object PolygonOverlayGrid:
   private def parse(lines: Array[String]): Array[Geometry] =
     lines.map(GeoJSON.parseFeatureGeometry)
 
-  private def calculateMinimumBoundingRectangle(features: Array[Geometry]): Envelope =
-    features.foldLeft(Envelope()): (minimumBoundingRectangle, geometry) =>
+  private def calculateMinimumBoundingRectangle(geometries: Array[Geometry]): Envelope =
+    geometries.foldLeft(Envelope()): (minimumBoundingRectangle, geometry) =>
       minimumBoundingRectangle.expandToInclude(geometry.getEnvelopeInternal)
       minimumBoundingRectangle
 
