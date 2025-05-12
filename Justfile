@@ -57,7 +57,7 @@ package:
   mkdir --parents dist
 
   scala --power \
-    package --assembly \
+    package --suppress-outdated-dependency-warning --assembly \
       --provided org.apache.hadoop:hadoop-client-api \
       --preamble=false \
       --output polygon-overlay-grid.jar \
