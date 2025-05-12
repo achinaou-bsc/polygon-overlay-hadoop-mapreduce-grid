@@ -44,6 +44,7 @@ run INPUT1 INPUT2 OUTPUT:
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Done."
 
 clean:
+  rm -rf dist
   scala clean .
 
 compile:
@@ -53,3 +54,13 @@ test:
 
 
 package:
+  mkdir --parents dist
+
+  scala --power \
+    package --assembly \
+      --provided org.apache.hadoop:hadoop-client-api \
+      --preamble=false \
+      --output polygon-overlay-grid.jar \
+      .
+
+  mv polygon-overlay-grid.jar dist
