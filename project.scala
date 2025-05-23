@@ -10,4 +10,4 @@
 //> using repository https://repo.osgeo.org/repository/release
 
 //> using dep org.apache.hadoop:hadoop-client-api:3.4.1
-//> using dep org.geotools:gt-geojson-core:28.6
+//> using dep org.geotools:gt-geojson-core:28.6.1
