@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.hadoop.io.Writable
+import org.apache.hadoop.io.WritableUtils
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.io.WKTReader
 import org.locationtech.jts.io.WKTWriter
@@ -21,14 +22,20 @@ class TaggedGeometryWritable(var taggedGeometry: TaggedGeometry) extends Writabl
     jsonObject.put(TaggedGeometryWritable.sourceLayerTypeFieldName, sourceLayerTypeSerialized)
     jsonObject.put(TaggedGeometryWritable.geometryFieldName, geometrySerialized)
 
-    val json: String = TaggedGeometryWritable.objectMapper.writeValueAsString(jsonObject)
+    val jsonBytes: Array[Byte] = TaggedGeometryWritable.objectMapper.writeValueAsBytes(jsonObject)
+    val jsonBytesLength: Int   = jsonBytes.length
 
-    dataOutput.writeUTF(json)
+    WritableUtils.writeVInt(dataOutput, jsonBytesLength)
+
+    dataOutput.write(jsonBytes)
 
   override def readFields(dataInput: DataInput): Unit =
-    val json: String = dataInput.readUTF
+    val jsonBytesLength: Int   = WritableUtils.readVInt(dataInput)
+    val jsonBytes: Array[Byte] = Array.ofDim(jsonBytesLength)
 
-    val jsonObject: JsonNode = TaggedGeometryWritable.objectMapper.readTree(json)
+    dataInput.readFully(jsonBytes)
+
+    val jsonObject: JsonNode = TaggedGeometryWritable.objectMapper.readTree(jsonBytes)
 
     val sourceLayerTypeSerialized: String = jsonObject.get(TaggedGeometryWritable.sourceLayerTypeFieldName).asText
     val geometrySerialized: String        = jsonObject.get(TaggedGeometryWritable.geometryFieldName).asText

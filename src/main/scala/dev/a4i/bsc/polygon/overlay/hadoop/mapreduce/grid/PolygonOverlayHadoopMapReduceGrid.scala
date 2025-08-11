@@ -3,13 +3,20 @@ package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid
 import scala.io.Source
 import scala.util.Using
 
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.Options
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.conf.Configured
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.mapreduce.JobID
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
+import org.apache.hadoop.util.Tool
+import org.apache.hadoop.util.ToolRunner
 import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 
@@ -18,38 +25,49 @@ import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live.PolygonOverlayGrid
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.TaggedGeometryWritable
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.util.GeoJSON
 
-class PolygonOverlayGrid
+class PolygonOverlayHadoopMapReduceGrid extends Configured, Tool:
 
-object PolygonOverlayGrid:
+  private val jobType: String          = "polygon-overlay"
+  private val jobTypeQualifier: String = "hadoop-mapreduce-grid"
 
-  private val jobType: String                      = "polygon-overlay"
-  private val jobTypeQualifier: String             = "mapreduce-grid"
-  private def jobName(referenceId: String): String = Array(jobType, jobTypeQualifier, referenceId).mkString("_")
+  var jobId: Option[JobID] = None
 
-  def main(args: Array[String]): Unit =
-    val Array(referenceId) = args
+  override def run(args: Array[String]): Int =
+    val options: Options = Options()
+      .addRequiredOption(/* opt */ null, "base", /* hasArg */ true, "Base layer GeoJSON")
+      .addRequiredOption(/* opt */ null, "overlay", /* hasArg */ true, "Overlay layer GeoJSON")
+      .addRequiredOption(/* opt */ null, "output", /* hasArg */ true, "Output directory")
+      .addRequiredOption(/* opt */ null, "reference-id", /* hasArg */ true, "Run identifier")
+      .addOption(/* opt */ null, "wait-for-completion", /* hasArg */ true, "Wait for the completion of the job")
 
-    sys.exit:
-      if job(referenceId).waitForCompletion(true)
-      then 0
-      else 1
+    val commandLine: CommandLine = DefaultParser().parse(options, args, /* stopAtNonOption = */ false)
 
-  private def job(referenceId: String) =
-    val workingDirectory: Path = Path(s"/jobs/$jobType", referenceId)
-    val inputDirectory: Path   = Path(workingDirectory, "input")
+    val base: Path                 = Path(commandLine.getOptionValue("base"))
+    val overlay: Path              = Path(commandLine.getOptionValue("overlay"))
+    val output: Path               = Path(commandLine.getOptionValue("output"))
+    val referenceId: String        = commandLine.getOptionValue("reference-id")
+    val waitForCompletion: Boolean = commandLine.getOptionValue("wait-for-completion", "true").toBoolean
 
-    val baseLayer: Path    = Path(inputDirectory, "a.geojson")
-    val overlayLayer: Path = Path(inputDirectory, "b.geojson")
+    val job: Job = getJob(base, overlay, output, referenceId)
 
-    val output: Path = Path(workingDirectory, "output")
+    if waitForCompletion
+    then if job.waitForCompletion(true) then 0 else 1
+    else
+      job.submit
+      jobId = Some(job.getJobID)
+      0
 
-    val job: Job = Job.getInstance(configuration(baseLayer, overlayLayer), jobName(referenceId))
+  private def getJob(base: Path, overlay: Path, output: Path, referenceId: String): Job =
+    val configuration: Configuration = getConfiguration(base, overlay)
+    val jobName: String              = s"${jobType}_${jobTypeQualifier}_${referenceId}"
 
-    FileInputFormat.addInputPath(job, baseLayer)
-    FileInputFormat.addInputPath(job, overlayLayer)
+    val job: Job = Job.getInstance(configuration, jobName)
+
+    FileInputFormat.addInputPath(job, base)
+    FileInputFormat.addInputPath(job, overlay)
     FileOutputFormat.setOutputPath(job, output)
 
-    job.setJarByClass(classOf[PolygonOverlayGrid])
+    job.setJarByClass(classOf[PolygonOverlayHadoopMapReduceGrid])
 
     job.setMapperClass(classOf[PolygonOverlayGridMapperLive])
     job.setMapOutputKeyClass(classOf[Text])
@@ -61,17 +79,18 @@ object PolygonOverlayGrid:
 
     job
 
-  private def configuration(baseLayer: Path, overlayLayer: Path): Configuration =
-    val configuration: Configuration = Configuration()
+  private def getConfiguration(base: Path, overlay: Path): Configuration =
+    val configuration: Configuration = getConf
 
-    configuration.set("baseLayer.path", baseLayer.toString)
+    configuration.set("baseLayer.path", base.toString)
+    configuration.set("overlayLayer.path", overlay.toString)
 
     val gridMinimumBoundingRectangle: Envelope =
       val fileSystem: FileSystem = FileSystem.get(configuration)
 
       new Envelope:
-        expandToInclude(getMinimumBoundingRectangle(fileSystem, baseLayer))
-        expandToInclude(getMinimumBoundingRectangle(fileSystem, overlayLayer))
+        expandToInclude(getMinimumBoundingRectangle(fileSystem, base))
+        expandToInclude(getMinimumBoundingRectangle(fileSystem, overlay))
 
     configuration.setDouble("grid.mbr.minX", gridMinimumBoundingRectangle.getMinX)
     configuration.setDouble("grid.mbr.minY", gridMinimumBoundingRectangle.getMinY)
@@ -110,3 +129,8 @@ object PolygonOverlayGrid:
     */
   private def getGridOrder(configuration: Configuration): Int =
     math.ceil(math.sqrt(configuration.getInt("mapreduce.job.reduces", 1).max(1))).toInt
+
+object PolygonOverlayHadoopMapReduceGrid:
+
+  def main(args: Array[String]): Unit =
+    sys.exit(ToolRunner.run(PolygonOverlayHadoopMapReduceGrid(), args))

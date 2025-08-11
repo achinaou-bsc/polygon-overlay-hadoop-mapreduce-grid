@@ -19,6 +19,8 @@ run INPUT1 INPUT2 OUTPUT:
   REFERENCE_ID="$(uuidgen)"
   WORKING_DIRECTORY="/jobs/$TYPE/$REFERENCE_ID"
   INPUT_DIRECTORY="$WORKING_DIRECTORY/input"
+  BASE_LAYER="$INPUT_DIRECTORY/a.geojson"
+  OVERLAY_LAYER="$INPUT_DIRECTORY/b.geojson"
   OUTPUT_DIRECTORY="$WORKING_DIRECTORY/output"
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Preparing the working directory..."
@@ -29,13 +31,15 @@ run INPUT1 INPUT2 OUTPUT:
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Uploading the input files..."
 
-  hadoop fs -put -f {{INPUT1}} "$INPUT_DIRECTORY/a.geojson"
-  hadoop fs -put -f {{INPUT2}} "$INPUT_DIRECTORY/b.geojson"
+  hadoop fs -put -f {{INPUT1}} "$BASE_LAYER"
+  hadoop fs -put -f {{INPUT2}} "$OVERLAY_LAYER"
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Running the Job..."
 
   scala --power \
-    run --suppress-experimental-feature-warning --suppress-outdated-dependency-warning --hadoop . -- "$REFERENCE_ID"
+    run --suppress-experimental-feature-warning --suppress-outdated-dependency-warning --hadoop . \
+    -- \
+    --base "$BASE_LAYER" --overlay "$OVERLAY_LAYER" --output "$OUTPUT_DIRECTORY" --reference-id "$REFERENCE_ID"
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Downloading the output files..."
 
@@ -48,7 +52,9 @@ clean:
   scala clean .
 
 compile:
-  scala compile .
+  scala --power \
+    compile --suppress-experimental-feature-warning --suppress-outdated-dependency-warning \
+    .
 
 test:
 
@@ -57,10 +63,10 @@ package:
   mkdir --parents dist
 
   scala --power \
-    package --suppress-outdated-dependency-warning --assembly \
+    package --suppress-experimental-feature-warning --suppress-outdated-dependency-warning --assembly \
       --provided org.apache.hadoop:hadoop-client-api \
       --preamble=false \
-      --output polygon-overlay-grid.jar \
+      --output polygon-overlay-hadoop-mapreduce-grid.jar \
       .
 
-  mv polygon-overlay-grid.jar dist
+  mv polygon-overlay-hadoop-mapreduce-grid.jar dist

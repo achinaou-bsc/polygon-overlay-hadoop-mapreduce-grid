@@ -2,6 +2,7 @@
 
 - [Polygon Overlay / Hadoop MapReduce / Grid](#polygon-overlay--hadoop-mapreduce--grid)
   - [Algorithm](#algorithm)
+  - [Development](#development)
   - [References](#references)
 
 ## Algorithm
@@ -44,7 +45,7 @@ This project includes a [Development Containers](https://containers.dev) definit
 
 After the project opens in the dev container, wait for the initialization process to complete. Then, install the recommended extensions.
 
-To open this project using Development Containers, the ports `9870`, `8088`, and `8042` should **not** be in use, as they are exposed to the host for accessing various Hadoop's management user interfaces.
+To open this project using Development Containers, the ports `8020`, `8032`, `8042`, `8088`, and `9870` should **not** be in use, as they are exposed to the host for accessing various Hadoop's management user interfaces.
 
 Exposed Hadoop Management User Intefaces:
 - [Name Node](http://localhost:9870)
