@@ -111,7 +111,7 @@ class PolygonOverlayHadoopMapReduceGrid extends Configured, Tool:
     val envelope: Envelope                 = Envelope()
     val compressionCodec: CompressionCodec = CompressionCodecFactory(fileSystem.getConf).getCodec(layer)
 
-    val rawInputStream: InputStream   = fileSystem.open(layer)
+    val rawInputStream: InputStream    = fileSystem.open(layer)
     val actualInputStream: InputStream =
       if compressionCodec != null
       then compressionCodec.createInputStream(rawInputStream)
