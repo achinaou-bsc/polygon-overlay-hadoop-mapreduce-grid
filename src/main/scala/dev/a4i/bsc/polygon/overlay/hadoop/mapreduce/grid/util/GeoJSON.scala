@@ -1,15 +1,21 @@
 package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.util
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.geotools.data.geojson.GeoJSONReader
 import org.geotools.data.geojson.GeoJSONWriter
 import org.geotools.feature.simple.SimpleFeatureBuilder
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder
 import org.geotools.referencing.crs.DefaultGeographicCRS
 import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.io.geojson.GeoJsonReader
 import org.opengis.feature.simple.SimpleFeature
 import org.opengis.feature.simple.SimpleFeatureType
 
 object GeoJSON:
+
+  private val objectMapper: ObjectMapper   = ObjectMapper()
+  private val geoJSONReader: GeoJsonReader = GeoJsonReader()
 
   def parseFeatureId(json: String): String =
     GeoJSONReader
@@ -17,10 +23,14 @@ object GeoJSON:
       .getID
 
   def parseFeatureGeometry(json: String): Geometry =
-    GeoJSONReader
-      .parseFeature(json)
-      .getDefaultGeometry
-      .asInstanceOf[Geometry]
+    val jsonNode: JsonNode = objectMapper.readTree(json)
+
+    val geometryJsonNode: JsonNode =
+      if jsonNode.has("type") && jsonNode.get("type").asText == "Feature"
+      then jsonNode.get("geometry")
+      else jsonNode
+
+    geoJSONReader.read(geometryJsonNode.toString)
 
   def parseFeature(json: String): (id: String, geometry: Geometry) =
     val feature: SimpleFeature = GeoJSONReader.parseFeature(json)

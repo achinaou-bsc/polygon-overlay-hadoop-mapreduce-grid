@@ -1,5 +1,7 @@
 package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid
 
+import java.io.InputStream
+import scala.io.Codec
 import scala.io.Source
 import scala.util.Using
 
@@ -11,6 +13,8 @@ import org.apache.hadoop.conf.Configured
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
+import org.apache.hadoop.io.compress.CompressionCodec
+import org.apache.hadoop.io.compress.CompressionCodecFactory
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.JobID
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
@@ -103,21 +107,27 @@ class PolygonOverlayHadoopMapReduceGrid extends Configured, Tool:
 
     configuration
 
-  private def getMinimumBoundingRectangle(fileSystem: FileSystem, layerPath: Path): Envelope =
-    calculateMinimumBoundingRectangle(parse(read(fileSystem, layerPath)))
+  private def getMinimumBoundingRectangle(fileSystem: FileSystem, layer: Path): Envelope =
+    val envelope: Envelope                 = Envelope()
+    val compressionCodec: CompressionCodec = CompressionCodecFactory(fileSystem.getConf).getCodec(layer)
 
-  private def read(fileSystem: FileSystem, layerPath: Path): Array[String] =
-    Using
-      .Manager(use => use(Source.fromInputStream(use(fileSystem.open(layerPath)))).getLines.to(Array))
-      .get
+    val rawInputStream: InputStream   = fileSystem.open(layer)
+    val actualInputStream: InputStream =
+      if compressionCodec != null
+      then compressionCodec.createInputStream(rawInputStream)
+      else rawInputStream
 
-  private def parse(lines: Array[String]): Array[Geometry] =
-    lines.map(GeoJSON.parseFeatureGeometry)
+    Using.resource(actualInputStream): inputStream =>
+      Source
+        .fromInputStream(inputStream)(using Codec.UTF8)
+        .getLines
+        .filterNot(_.trim.isEmpty)
+        .foreach: line =>
+          val geometry: Geometry = GeoJSON.parseFeatureGeometry(line)
 
-  private def calculateMinimumBoundingRectangle(geometries: Array[Geometry]): Envelope =
-    geometries.foldLeft(Envelope()): (minimumBoundingRectangle, geometry) =>
-      minimumBoundingRectangle.expandToInclude(geometry.getEnvelopeInternal)
-      minimumBoundingRectangle
+          if geometry != null then envelope.expandToInclude(geometry.getEnvelopeInternal)
+
+    envelope
 
   /** Determines the side length (order) of the grid. The grid is intended to be large enough to map at least one cell
     * to each reduce task.
