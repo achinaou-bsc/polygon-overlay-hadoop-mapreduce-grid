@@ -15,4 +15,4 @@
 //> using dep org.apache.hadoop:hadoop-client-api:3.4.1
 //> using dep org.geotools:gt-geojson-core:28.6.1
 //> using dep org.locationtech.jts.io:jts-io-common:1.20.0
-//> using dep commons-cli:commons-cli:1.10.0
+//> using dep commons-cli:commons-cli:2.0-gt2-pre1
