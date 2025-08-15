@@ -4,6 +4,7 @@ import java.lang.Iterable as JavaIterable
 import scala.collection.mutable.Buffer
 import scala.jdk.CollectionConverters.given
 
+import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.io.Text
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.index.strtree.STRtree
@@ -39,7 +40,7 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
         .asScala
         .asInstanceOf[Buffer[Geometry]]
         .map(overlay(baseGeometry))
-        .foreach(overlayGeometry => context.write(key, Text(GeoJSON.serialize(overlayGeometry))))
+        .foreach(overlayGeometry => context.write(NullWritable.get, Text(GeoJSON.serialize(overlayGeometry))))
 
   private def buildTree(geometries: Iterable[Geometry]): STRtree =
     val tree: STRtree = STRtree()

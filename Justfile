@@ -43,7 +43,7 @@ run INPUT1 INPUT2 OUTPUT:
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Downloading the output files..."
 
-  hadoop fs -cat "$OUTPUT_DIRECTORY/*" | cut -f2 > {{OUTPUT}}
+  hadoop fs -cat "$OUTPUT_DIRECTORY/*" > {{OUTPUT}}
 
   echo "$(date "+%Y-%m-%d %H:%M:%S.%3N") INFO $REFERENCE_ID: Done."
 

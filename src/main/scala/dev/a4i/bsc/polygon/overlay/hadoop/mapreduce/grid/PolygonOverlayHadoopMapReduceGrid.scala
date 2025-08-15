@@ -12,6 +12,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.conf.Configured
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.io.compress.CompressionCodec
 import org.apache.hadoop.io.compress.CompressionCodecFactory
@@ -78,7 +79,7 @@ class PolygonOverlayHadoopMapReduceGrid extends Configured, Tool:
     job.setMapOutputValueClass(classOf[TaggedGeometryWritable])
 
     job.setReducerClass(classOf[PolygonOverlayGridReducerLive])
-    job.setOutputKeyClass(classOf[Text])
+    job.setOutputKeyClass(classOf[NullWritable])
     job.setOutputValueClass(classOf[Text])
 
     job
