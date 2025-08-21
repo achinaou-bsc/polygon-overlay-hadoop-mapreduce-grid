@@ -7,7 +7,7 @@ opaque type Grid = Vector[Grid.Cell]
 
 object Grid:
 
-  case class Cell(id: String, envelope: Envelope)
+  case class Cell(id: Long, envelope: Envelope)
 
   extension (grid: Grid) def foreach[U](f: Cell => U): Unit = grid.foreach(f)
 
@@ -25,6 +25,6 @@ object Grid:
         val aY = minimumBoundingRectangle.getMinY + row * cellHeight
         val bY = aY + cellHeight
 
-        Cell(s"$row:$col", Envelope(Coordinate(aX, aY), Coordinate(bX, bY)))
+        Cell(row * order + col, Envelope(Coordinate(aX, aY), Coordinate(bX, bY)))
 
     grid.to(Vector)

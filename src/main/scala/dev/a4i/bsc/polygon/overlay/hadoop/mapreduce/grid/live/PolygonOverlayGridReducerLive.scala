@@ -4,6 +4,7 @@ import java.lang.Iterable as JavaIterable
 import scala.collection.mutable.Buffer
 import scala.jdk.CollectionConverters.given
 
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.io.Text
 import org.locationtech.jts.geom.Geometry
@@ -17,7 +18,7 @@ import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.util.GeoJSON
 class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
 
   override def reduce(
-      key: Text,
+      key: LongWritable,
       values: JavaIterable[TaggedGeometryWritable],
       context: PolygonOverlayGridReducer#Context
   ): Unit =

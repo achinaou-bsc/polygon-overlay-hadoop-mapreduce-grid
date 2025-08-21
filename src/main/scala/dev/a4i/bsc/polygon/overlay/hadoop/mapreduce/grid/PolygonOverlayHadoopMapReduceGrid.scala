@@ -12,6 +12,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.conf.Configured
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.io.compress.CompressionCodec
@@ -26,6 +27,7 @@ import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live.PolygonOverlayGridMapperLive
+import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live.PolygonOverlayGridPartitionerLive
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live.PolygonOverlayGridReducerLive
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.TaggedGeometryWritable
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.util.GeoJSON
@@ -75,8 +77,10 @@ class PolygonOverlayHadoopMapReduceGrid extends Configured, Tool:
     job.setJarByClass(classOf[PolygonOverlayHadoopMapReduceGrid])
 
     job.setMapperClass(classOf[PolygonOverlayGridMapperLive])
-    job.setMapOutputKeyClass(classOf[Text])
+    job.setMapOutputKeyClass(classOf[LongWritable])
     job.setMapOutputValueClass(classOf[TaggedGeometryWritable])
+
+    job.setPartitionerClass(classOf[PolygonOverlayGridPartitionerLive])
 
     job.setReducerClass(classOf[PolygonOverlayGridReducerLive])
     job.setOutputKeyClass(classOf[NullWritable])

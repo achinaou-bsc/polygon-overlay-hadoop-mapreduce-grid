@@ -65,4 +65,4 @@ class PolygonOverlayGridMapperLive extends PolygonOverlayGridMapper:
 
     tree
       .query(geometry.getEnvelopeInternal)
-      .forEach(cellId => context.write(Text(cellId.asInstanceOf[String]), taggedGeometryWritable))
+      .forEach(cellId => context.write(LongWritable(cellId.asInstanceOf[Long]), taggedGeometryWritable))
