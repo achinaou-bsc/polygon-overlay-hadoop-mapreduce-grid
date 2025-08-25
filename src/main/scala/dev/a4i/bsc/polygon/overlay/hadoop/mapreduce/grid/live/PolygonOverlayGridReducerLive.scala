@@ -1,6 +1,7 @@
 package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live
 
 import java.lang.Iterable as JavaIterable
+import java.util.List as JavaList
 import scala.jdk.CollectionConverters.given
 
 import org.apache.hadoop.io.LongWritable
@@ -21,6 +22,8 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
       values: JavaIterable[TaggedGeometryWritable],
       context: PolygonOverlayGridReducer#Context
   ): Unit =
+    given PolygonOverlayGridReducer#Context = context
+
     val taggedGeometries: Array[TaggedGeometry] =
       values.asScala
         .map(_.taggedGeometry)
@@ -35,14 +38,21 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
       buildTree(overlayLayerGeometries)
 
     baseLayerGeometries.foreach: baseGeometry =>
-      overlayLayerGeometriesTree
-        .query(baseGeometry.getEnvelopeInternal)
-        .iterator
-        .asScala
-        .asInstanceOf[Iterator[Geometry]]
+      context.getCounter(PolygonOverlayGridReducerLive.Counter.SPATIAL_INDEX_QUERIES).increment(1)
+
+      val candidates: JavaList[Geometry] =
+        overlayLayerGeometriesTree
+          .query(baseGeometry.getEnvelopeInternal)
+          .asInstanceOf[JavaList[Geometry]]
+
+      context.getCounter(PolygonOverlayGridReducerLive.Counter.CANDIDATES_FROM_INDEX).increment(candidates.size)
+
+      candidates.iterator.asScala
         .filter(overlaps(baseGeometry))
         .map(overlay(baseGeometry))
-        .foreach(overlayGeometry => context.write(NullWritable.get, Text(GeoJSON.serialize(overlayGeometry))))
+        .foreach: overlayGeometry =>
+          context.write(NullWritable.get, Text(GeoJSON.serialize(overlayGeometry)))
+          context.getCounter(PolygonOverlayGridReducerLive.Counter.REDUCE_OUTPUT_POLYGONS).increment(1)
 
   private def buildTree(geometries: Iterable[Geometry]): STRtree =
     val tree: STRtree = STRtree()
@@ -53,8 +63,21 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
 
     tree
 
-  private def overlaps(a: Geometry)(b: Geometry): Boolean =
-    a.intersects(b)
+  private def overlaps(a: Geometry)(b: Geometry)(using context: PolygonOverlayGridReducer#Context): Boolean =
+    val result: Boolean = a.intersects(b)
+    context.getCounter(PolygonOverlayGridReducerLive.Counter.INTERSECTION_CHECKS).increment(1)
+    result
 
-  private def overlay(a: Geometry)(b: Geometry): Geometry =
-    a.intersection(b)
+  private def overlay(a: Geometry)(b: Geometry)(using context: PolygonOverlayGridReducer#Context): Geometry =
+    val result = a.intersection(b)
+    context.getCounter(PolygonOverlayGridReducerLive.Counter.INTERSECTION_CALCULATIONS).increment(1)
+    result
+
+object PolygonOverlayGridReducerLive:
+
+  enum Counter extends Enum[Counter]:
+    case SPATIAL_INDEX_QUERIES
+    case CANDIDATES_FROM_INDEX
+    case INTERSECTION_CHECKS
+    case INTERSECTION_CALCULATIONS
+    case REDUCE_OUTPUT_POLYGONS

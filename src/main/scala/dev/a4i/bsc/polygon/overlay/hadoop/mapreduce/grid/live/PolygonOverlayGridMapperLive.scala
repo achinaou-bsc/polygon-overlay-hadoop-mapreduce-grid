@@ -1,5 +1,6 @@
 package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live
 
+import java.util.List as JavaList
 import scala.compiletime.uninitialized
 
 import org.apache.hadoop.conf.Configuration
@@ -63,6 +64,23 @@ class PolygonOverlayGridMapperLive extends PolygonOverlayGridMapper:
     val taggedGeometry: TaggedGeometry                 = TaggedGeometry(currentLayerType, geometry)
     val taggedGeometryWritable: TaggedGeometryWritable = TaggedGeometryWritable(taggedGeometry)
 
-    tree
-      .query(geometry.getEnvelopeInternal)
-      .forEach(cellId => context.write(LongWritable(cellId.asInstanceOf[Long]), taggedGeometryWritable))
+    currentLayerType match
+      case LayerType.Base    => context.getCounter(PolygonOverlayGridMapperLive.Counter.BASE_POLYGONS_READS).increment(1)
+      case LayerType.Overlay =>
+        context.getCounter(PolygonOverlayGridMapperLive.Counter.OVERLAY_POLYGONS_READS).increment(1)
+
+    val cells: JavaList[Long] = tree.query(geometry.getEnvelopeInternal).asInstanceOf[JavaList[Long]]
+
+    context.getCounter(PolygonOverlayGridMapperLive.Counter.CELL_ASSIGNMENTS).increment(cells.size)
+
+    cells.forEach: cellId =>
+      context.write(LongWritable(cellId), taggedGeometryWritable)
+      context.getCounter(PolygonOverlayGridMapperLive.Counter.MAP_OUTPUT_RECORDS).increment(1)
+
+object PolygonOverlayGridMapperLive:
+
+  enum Counter extends Enum[Counter]:
+    case BASE_POLYGONS_READS
+    case OVERLAY_POLYGONS_READS
+    case CELL_ASSIGNMENTS
+    case MAP_OUTPUT_RECORDS
