@@ -14,6 +14,7 @@ import org.locationtech.jts.geom.Envelope
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.index.strtree.STRtree
 
+import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.Counter
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.Grid
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.LayerType
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.TaggedGeometry
@@ -65,22 +66,12 @@ class PolygonOverlayGridMapperLive extends PolygonOverlayGridMapper:
     val taggedGeometryWritable: TaggedGeometryWritable = TaggedGeometryWritable(taggedGeometry)
 
     currentLayerType match
-      case LayerType.Base    => context.getCounter(PolygonOverlayGridMapperLive.Counter.BASE_POLYGON_READS).increment(1)
-      case LayerType.Overlay =>
-        context.getCounter(PolygonOverlayGridMapperLive.Counter.OVERLAY_POLYGON_READS).increment(1)
+      case LayerType.Base    => context.getCounter(Counter.BASE_POLYGONS_READ).increment(1)
+      case LayerType.Overlay => context.getCounter(Counter.OVERLAY_POLYGONS_READ).increment(1)
 
-    val cells: JavaList[Long] = tree.query(geometry.getEnvelopeInternal).asInstanceOf[JavaList[Long]]
-
-    context.getCounter(PolygonOverlayGridMapperLive.Counter.CELL_ASSIGNMENTS).increment(cells.size)
-
-    cells.forEach: cellId =>
-      context.write(LongWritable(cellId), taggedGeometryWritable)
-      context.getCounter(PolygonOverlayGridMapperLive.Counter.MAP_OUTPUT_RECORDS).increment(1)
-
-object PolygonOverlayGridMapperLive:
-
-  enum Counter extends Enum[Counter]:
-    case BASE_POLYGON_READS
-    case OVERLAY_POLYGON_READS
-    case CELL_ASSIGNMENTS
-    case MAP_OUTPUT_RECORDS
+    tree
+      .query(geometry.getEnvelopeInternal)
+      .asInstanceOf[JavaList[Long]]
+      .forEach: cellId =>
+        context.write(LongWritable(cellId), taggedGeometryWritable)
+        context.getCounter(Counter.MAP_OUTPUTS_WRITTEN).increment(1)
