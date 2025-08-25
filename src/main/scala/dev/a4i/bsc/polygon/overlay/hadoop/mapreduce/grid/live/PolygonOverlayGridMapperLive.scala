@@ -65,9 +65,9 @@ class PolygonOverlayGridMapperLive extends PolygonOverlayGridMapper:
     val taggedGeometryWritable: TaggedGeometryWritable = TaggedGeometryWritable(taggedGeometry)
 
     currentLayerType match
-      case LayerType.Base    => context.getCounter(PolygonOverlayGridMapperLive.Counter.BASE_POLYGONS_READS).increment(1)
+      case LayerType.Base    => context.getCounter(PolygonOverlayGridMapperLive.Counter.BASE_POLYGON_READS).increment(1)
       case LayerType.Overlay =>
-        context.getCounter(PolygonOverlayGridMapperLive.Counter.OVERLAY_POLYGONS_READS).increment(1)
+        context.getCounter(PolygonOverlayGridMapperLive.Counter.OVERLAY_POLYGON_READS).increment(1)
 
     val cells: JavaList[Long] = tree.query(geometry.getEnvelopeInternal).asInstanceOf[JavaList[Long]]
 
@@ -80,7 +80,7 @@ class PolygonOverlayGridMapperLive extends PolygonOverlayGridMapper:
 object PolygonOverlayGridMapperLive:
 
   enum Counter extends Enum[Counter]:
-    case BASE_POLYGONS_READS
-    case OVERLAY_POLYGONS_READS
+    case BASE_POLYGON_READS
+    case OVERLAY_POLYGON_READS
     case CELL_ASSIGNMENTS
     case MAP_OUTPUT_RECORDS

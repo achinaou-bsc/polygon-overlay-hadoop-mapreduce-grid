@@ -45,7 +45,7 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
           .query(baseGeometry.getEnvelopeInternal)
           .asInstanceOf[JavaList[Geometry]]
 
-      context.getCounter(PolygonOverlayGridReducerLive.Counter.CANDIDATES_FROM_INDEX).increment(candidates.size)
+      context.getCounter(PolygonOverlayGridReducerLive.Counter.SPATIAL_INDEX_MATCHES).increment(candidates.size)
 
       candidates.iterator.asScala
         .filter(overlaps(baseGeometry))
@@ -77,7 +77,7 @@ object PolygonOverlayGridReducerLive:
 
   enum Counter extends Enum[Counter]:
     case SPATIAL_INDEX_QUERIES
-    case CANDIDATES_FROM_INDEX
+    case SPATIAL_INDEX_MATCHES
     case INTERSECTION_CHECKS
     case INTERSECTION_CALCULATIONS
     case REDUCE_OUTPUT_POLYGONS
