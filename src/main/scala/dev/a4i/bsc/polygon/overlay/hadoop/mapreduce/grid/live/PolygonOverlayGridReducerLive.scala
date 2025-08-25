@@ -10,11 +10,11 @@ import org.apache.hadoop.io.Text
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.index.strtree.STRtree
 
+import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.Counter
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.LayerType
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.TaggedGeometry
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.TaggedGeometryWritable
 import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.util.GeoJSON
-import dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.model.Counter
 
 class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
 
