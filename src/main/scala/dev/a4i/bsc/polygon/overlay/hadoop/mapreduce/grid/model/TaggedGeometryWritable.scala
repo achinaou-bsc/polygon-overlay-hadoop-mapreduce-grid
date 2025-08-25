@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.io.WritableUtils
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.io.WKTReader
 import org.locationtech.jts.io.WKTWriter
@@ -40,8 +41,8 @@ class TaggedGeometryWritable(var taggedGeometry: TaggedGeometry) extends Writabl
     val sourceLayerTypeSerialized: String = jsonObject.get(TaggedGeometryWritable.sourceLayerTypeFieldName).asText
     val geometrySerialized: String        = jsonObject.get(TaggedGeometryWritable.geometryFieldName).asText
 
-    val sourceLayerType = LayerType.valueOf(sourceLayerTypeSerialized)
-    val geometry        = WKTReader(TaggedGeometryWritable.geometryFactory).read(geometrySerialized)
+    val sourceLayerType: LayerType = LayerType.valueOf(sourceLayerTypeSerialized)
+    val geometry: Geometry         = WKTReader(TaggedGeometryWritable.geometryFactory).read(geometrySerialized)
 
     taggedGeometry = TaggedGeometry(sourceLayerType, geometry)
 

@@ -1,7 +1,6 @@
 package dev.a4i.bsc.polygon.overlay.hadoop.mapreduce.grid.live
 
 import java.lang.Iterable as JavaIterable
-import scala.collection.mutable.Buffer
 import scala.jdk.CollectionConverters.given
 
 import org.apache.hadoop.io.LongWritable
@@ -38,8 +37,10 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
     baseLayerGeometries.foreach: baseGeometry =>
       overlayLayerGeometriesTree
         .query(baseGeometry.getEnvelopeInternal)
+        .iterator
         .asScala
-        .asInstanceOf[Buffer[Geometry]]
+        .asInstanceOf[Iterator[Geometry]]
+        .filter(overlaps(baseGeometry))
         .map(overlay(baseGeometry))
         .foreach(overlayGeometry => context.write(NullWritable.get, Text(GeoJSON.serialize(overlayGeometry))))
 
@@ -51,6 +52,9 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
     tree.build()
 
     tree
+
+  private def overlaps(a: Geometry)(b: Geometry): Boolean =
+    a.intersects(b)
 
   private def overlay(a: Geometry)(b: Geometry): Geometry =
     a.intersection(b)
