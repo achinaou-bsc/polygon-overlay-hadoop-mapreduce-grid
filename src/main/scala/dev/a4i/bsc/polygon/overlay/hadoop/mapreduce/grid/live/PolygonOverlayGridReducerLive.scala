@@ -46,8 +46,6 @@ class PolygonOverlayGridReducerLive extends PolygonOverlayGridReducer:
           .query(baseGeometry.getEnvelopeInternal)
           .asInstanceOf[JavaList[Geometry]]
 
-      context.getCounter(Counter.SPATIAL_INDEX_MATCHES).increment(candidates.size)
-
       candidates.iterator.asScala
         .filter(overlaps(baseGeometry))
         .map(overlay(baseGeometry))
