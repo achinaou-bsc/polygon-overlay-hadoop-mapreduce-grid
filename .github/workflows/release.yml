@@ -28,7 +28,7 @@ jobs:
         uses: coursier/setup-action@v1
         with:
           jvm: temurin:8
-          apps: scala:3.7.2
+          apps: scala:3.7.3
 
       - name: Check Code Formatting
         run: just check-formatting
